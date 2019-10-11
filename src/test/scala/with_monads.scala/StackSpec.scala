@@ -22,14 +22,17 @@ class StackSpec extends FlatSpec {
     }
   }
 
-  "Stack" should "yield expected results for [x = pop(), y = pop(), push(x+y)]" in {
-    val q: State[List[Int], Int] = for {
-      x <- pop.map(_.getOrElse(0))
-      y <- pop.map(_.getOrElse(0))
-      _ <- push(x + y)
-    } yield (x + y)
+  val popPopPush: State[List[Int], Int] = for {
+    x <- pop.map(_.getOrElse(0))
+    y <- pop.map(_.getOrElse(0))
+    _ <- push(x + y)
+  } yield (x + y)
+  
+  "Stack" should "be (List(3, 3), 3) for [x = pop(), y = pop(), push(x+y)] on List(1, 2, 3)" in {
+    popPopPush.run(List(1, 2, 3)) should equal(List(3, 3), 3)
+  }
 
-    q.run(List(1, 2, 3)) should equal(List(3, 3), 3)
-    q.run(List.empty) should equal(List(0), 0)
+  it should "be (List(0), 0) for [x = pop(), y = pop(), push(x+y)] on List.empty" in {
+    popPopPush.run(List.empty) should equal(List(0), 0)
   }
 }

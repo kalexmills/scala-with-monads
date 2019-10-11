@@ -18,4 +18,11 @@ object State {
     }
     def pure[A](a: A): State[S,A] = State(s => (s,a))
   }
+
+  def get[S]: State[S, S] = State(s => (s, s))
+  def set[S](s: S): State[S, Unit] = State(_ => (s, ()))
+  def modify[S](f: S => S): State[S, S] = State(in => {
+    val out = f(in)
+    (out, out)
+  })
 }

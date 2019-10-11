@@ -42,10 +42,13 @@ object Monad {
 
 trait MonadOps {
   final class MonadSyntax[M[_]: Monad, A](ma: M[A]) {
-    def map[B](g: A => B): M[B] = implicitly[Monad[M]].map(ma)(g)
-    def flatMap[B](g: A => M[B]): M[B] = implicitly[Monad[M]].flatMap(ma)(g)
-    def pure[A](a: A): M[A] = implicitly[Monad[M]].pure(a)
+    val M = implicitly[Monad[M]]
+    def map[B](g: A => B): M[B] = M.map(ma)(g)
+    def flatMap[B](g: A => M[B]): M[B] = M.flatMap(ma)(g)
+    def pure[A](a: A): M[A] = M.pure(a)
   }
 
   implicit def syntax[M[_]: Monad, A](ma: M[A]) = new MonadSyntax[M,A](ma)
 }
+
+object MonadOps extends MonadOps

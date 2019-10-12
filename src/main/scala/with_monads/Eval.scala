@@ -55,6 +55,11 @@ object Eval {
     result.get.asInstanceOf[A]
   }
 
+  implicit def monadForEval: Monad[Eval] = new Monad[Eval] {
+      def flatMap[A, B](fa: Eval[A])(g: A => Eval[B]): Eval[B] = fa.flatMap(g)
+      def pure[A](a: A): Eval[A] = Eval.pure(a)
+  }
+
   def factorial_(n: BigInt): BigInt =
     if (n == 1 || n == 0) BigInt(1)
     else n * factorial_(n - 1)

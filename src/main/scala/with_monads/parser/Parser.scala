@@ -20,6 +20,8 @@ object Parser {
   def apply[A](parse: EitherT[StateT[Eval, S, *], Error, A]): Parser[A] =
     new Parser(parse)
 
+  def always[A](a: A): Parser[A] = Parser(Monad[M].pure(a))
+
   def char(c: Char): Parser[Char] =
     Parser(for {
       s <- getS
@@ -37,7 +39,7 @@ object Parser {
       else Monad[M].pure(s.string.charAt(s.offset))
       _ <- advance(1)
     } yield c)
-  
+
   def string(str: String): Parser[String] = 
     Parser(for {
       s <- getS
@@ -50,9 +52,19 @@ object Parser {
   def regex(re: Regex): Parser[String] = 
     Parser(for {
       s <- getS
-      m <- re.findPrefixMatchOf(s.string).fold(fail[String](Error(s"expected $re", s.offset)))(m => Monad[M].pure(m.matched))
+      m <- re.findPrefixMatchOf(s.string.drop(s.offset)).fold(fail[String](Error(s"expected $re", s.offset)))(m => Monad[M].pure(m.matched))
       _ <- advance(m.length)
     } yield m)
+
+  def opt[A](p: Parser[A]): Parser[Option[A]] = 
+    Parser(backtrack(p.parser.map[Option[A]](Some(_)))
+      .recoverWith(_ => Monad[M].pure(None)))
+
+  def int: Parser[Int] = 
+    for {
+      sign <- opt(char('-'))
+      text <- regex("0|([1-9][0-9]*)".r)
+    } yield ???
 
   lazy val eof: Parser[Unit] = 
     Parser(for {
@@ -60,13 +72,18 @@ object Parser {
       _ <- if (s.offset == s.string.length) Monad[M].unit else fail(Error("expected eof", s.offset))
     } yield ())
 
-  // H elper algebras for working with the complicated monad
+  // Helper algebras for working with the complicated monad
   private def liftE[A](inner: Inner[A]): M[A] =
     EitherT.liftF[Inner, Error, A](inner)
 
   private val getS: M[S] = liftE(StateT.get)
 
+  private def setS(s: S): M[Unit] = liftE(StateT.set(s))
+
   private def fail[A](e: Error): M[A] = EitherT.left[Inner, Error, A](e)
+
+  private def backtrack[A](ma: M[A]): M[A] = 
+    getS.flatMap(s => ma.recoverWith(e => setS(s) >> EitherT.left(e)))
 
   private def modify(f: S => S): M[S] =
     liftE(StateT.modify[Eval, S](f))

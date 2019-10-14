@@ -74,6 +74,9 @@ object Parser {
       _ <- advance(m.length)
     } yield m)
 
+  def delay[A](p: => Parser[A]): Parser[A] = 
+    Parser(always(()).parser >> p.parser)
+
   def opt[A](p: Parser[A]): Parser[Option[A]] =
     Parser(
       backtrack(p.parser.map[Option[A]](Some(_)))

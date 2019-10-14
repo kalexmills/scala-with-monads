@@ -11,6 +11,9 @@ final class Parser[A](private val parser: Parser.M[A]) {
 
   def flatMap[B](f: A => Parser[B]): Parser[B] =
     Parser(parser.flatMap(a => f(a).parser))
+
+  def or(other: Parser[A]): Parser[A] = 
+    Parser(Parser.backtrack(this.parser).recoverWith(e => other.parser))
 }
 
 object Parser {

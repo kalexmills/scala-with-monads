@@ -11,22 +11,22 @@ import org.scalatest.Matchers._
 
 class StackSpec extends FlatSpec {
 
-  def push(v: Int) = State[List[Int], Unit] { s =>
+  def push[A](v: A) = State[List[A], Unit] { s =>
     (v :: s, Unit)
   }
 
-  val pop: State[List[Int], Option[Int]] = State { (s: List[Int]) =>
+  def pop[A]: State[List[A], Option[A]] = State { (s: List[A]) =>
     s match {
       case Nil    => (s, None)
       case h :: t => (t, Some(h))
     }
   }
 
-  val popPopPush: State[List[Int], Int] = for {
-    x <- pop.map(_.getOrElse(0))
-    y <- pop.map(_.getOrElse(0))
-    _ <- push(x + y)
-  } yield (x + y)
+  def popPopPush[A](implicit ev: Monoid[A]): State[List[A], A] = for {
+    x <- pop.map(_.getOrElse(Monoid.empty))
+    y <- pop.map(_.getOrElse(Monoid.empty))
+    _ <- push(Monoid.combine(x, y))
+  } yield (Monoid.combine(x, y))
   
   "Stack" should "be (List(3, 3), 3) for [x = pop(), y = pop(), push(x+y)] on List(1, 2, 3)" in {
     popPopPush.run(List(1, 2, 3)) should equal(List(3, 3), 3)

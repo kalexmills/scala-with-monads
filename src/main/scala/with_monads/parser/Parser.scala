@@ -83,6 +83,9 @@ object Parser {
         .recoverWith(_ => Monad[M].pure(None))
     )
 
+  def token[A](p: Parser[A]): Parser[A] = 
+    p <* whitespace
+
   def many[A](p: Parser[A]): Parser[List[A]] = {
     def manyImpl(from: List[A]): Parser[List[A]] =
       opt(p).flatMap(_.fold(Monad[Parser].pure(from))(a => manyImpl(a :: from)))
@@ -94,11 +97,11 @@ object Parser {
     p.flatMap(head => many(p).map(head :: _))
 
 
-  def digit: Parser[Char] = 
+  lazy val digit: Parser[Char] = 
     charWhere(Set('0', '1', '2', '3', '4', '5', '6', '7', '8', '9').contains)
 
 
-  def int: Parser[Int] =
+  lazy val int: Parser[Int] =
     for {
       sign <- opt(char('-'))
       text <- many1(digit)
@@ -110,6 +113,8 @@ object Parser {
       _ <- if (s.offset == s.string.length) Monad[M].unit
       else fail(Error("expected eof", s.offset))
     } yield ())
+
+  lazy val whitespace: Parser[String] = regex("\\s*".r)
 
   // Helper algebras for working with the complicated monad
   private def liftE[A](inner: Inner[A]): M[A] =

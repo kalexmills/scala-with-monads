@@ -56,6 +56,7 @@ trait MonadOps {
     def flatten[B](implicit ev: A <:< M[B]) = M.flatten(M.map(ma)(ev))
     def flatTap[B](f: A => M[B]): M[A] = M.flatTap(ma)(f)
     def >>[B](other: => M[B]): M[B] = M.flatMap(ma)(_ => other)
+    def <*[B](other: M[B]): M[A] = M.flatTap(ma)(_ => other)
   }
 
   implicit def syntax[M[_]: Monad, A](ma: M[A]) = new MonadSyntax[M,A](ma)

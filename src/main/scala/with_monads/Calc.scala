@@ -1,32 +1,37 @@
 package with_monads
 
+import transformers._
 import parser._, Parser._
 
 object Calc {
-  lazy val atom: Parser[Int] = delay(paren(low) or int)
+  lazy val atom: OptionT[Parser, Int] = OptionT(delay(paren(low.value) or int.map(Some(_): Option[Int])))
 
-  def paren[A](p: Parser[A]): Parser[A] = char('(') >> p flatTap(_ => char(')'))
+  def paren[A](p: Parser[A]): Parser[A] =
+    char('(') >> p flatTap (_ => char(')'))
 
-  lazy val high: Parser[Int] = {
+  lazy val high: OptionT[Parser, Int] = {
     val single = atom
-    val expr = for {
-    left <- atom
-    op <- char('*') or char('/')
-    right <- high
-  } yield if (op == '*') left * right else left / right
-  expr or single
-}
+    val expr: OptionT[Parser, Int] = for {
+      left <- atom
+      op <- OptionT.liftF[Parser, Char](token(char('*') or char('/')))
+      right <- high
+      r <- if (op == '*') OptionT.pure(left * right)
+      else if (right != 0) OptionT.pure(left / right)
+      else OptionT.none
+    } yield r
+    OptionT(expr.value or single.value)
+  }
 
-  lazy val low: Parser[Int] = {
+  lazy val low: OptionT[Parser, Int] = {
     val single = high
-    val expr = for {
+    val expr: OptionT[Parser, Int] = for {
       left <- high
-      op <- char('+') or char('-')
+      op <- OptionT.liftF(token(char('+') or char('-')))
       right <- low
     } yield if (op == '+') left + right else left - right
 
-    expr or single
+    OptionT(expr.value or single.value)
   }
 
-  lazy val calc = low flatTap(_ => eof)
+  lazy val calc = low.value <* eof
 }

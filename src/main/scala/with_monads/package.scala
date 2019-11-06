@@ -1,4 +1,4 @@
-package object with_monads extends MonadOps {
+package object with_monads extends MonadOps with IOOps {
   import cats.Id
 
   // TODO: figure out how MonadOps needs to be translated???

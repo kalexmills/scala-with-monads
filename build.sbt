@@ -28,3 +28,5 @@ libraryDependencies += "org.typelevel" %% "cats-core" % "1.6.0"
 
 
 libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+
+mainClass in (Compile, run) := Some("with_monads.Main")

@@ -47,5 +47,5 @@ trait MonadOps {
     def pure[A](a: A): M[A] = implicitly[Monad[M]].pure(a)
   }
 
-  implicit def syntax[M[_]: Monad, A](ma: M[A]) = new MonadSyntax[M,A](ma)
+  implicit def syntaxForMonad[M[_]: Monad, A](ma: M[A]) = new MonadSyntax[M,A](ma)
 }

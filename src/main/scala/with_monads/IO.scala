@@ -6,7 +6,7 @@ object IO {
 
   case class Pure[A](a: A) extends IO[A]
   case class FlatMap[B,A](fa: IO[B], f: B => IO[A]) extends IO[A]
-  case class Delay[A](f: () => A) extends IO[A] // Can we pass down Math.random() or just Math.random  ?
+  case class Delay[A](f: () => A) extends IO[A]
 
   def unsafeRunSync[A](io: IO[A]): A = {
     io match {
